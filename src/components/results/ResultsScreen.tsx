@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import type { CalculationResult, FlightInput, CalculationSettings } from '../../engine/types.ts'
 import { computeFlightPrayerTimes, CONVENTIONS } from '../../engine/index.ts'
 import { formatTimeWithTZ } from '../../lib/format.ts'
@@ -21,6 +21,16 @@ export function ResultsScreen({ result: originalResult, input, settings, onBack 
   const { projected, override, fix, gpsLoading, gpsError, requestGPS, setManualPosition, clearManualOverride } = useFlightPosition(input, now)
   const [selectedPrayerIdx, setSelectedPrayerIdx] = useState<number | null>(null)
   const [adjustMode, setAdjustMode] = useState(false)
+
+  const selectPrayer = useCallback((idx: number) => {
+    setSelectedPrayerIdx(idx)
+    window.scrollTo({ top: 0 })
+  }, [])
+
+  const deselectPrayer = useCallback(() => {
+    setSelectedPrayerIdx(null)
+    window.scrollTo({ top: 0 })
+  }, [])
 
   // When we have a position fix, recalculate prayer times from that point
   const result = useMemo((): CalculationResult => {
@@ -79,7 +89,7 @@ export function ResultsScreen({ result: originalResult, input, settings, onBack 
           qibla={qibla}
           flightPath={result.flightPath}
           projected={projected}
-          onBack={() => setSelectedPrayerIdx(null)}
+          onBack={deselectPrayer}
         />
       </div>
     )
@@ -226,7 +236,7 @@ export function ResultsScreen({ result: originalResult, input, settings, onBack 
         input={input}
         qiblaMap={result.qiblaAtPrayerTimes}
         now={now}
-        onSelectPrayer={setSelectedPrayerIdx}
+        onSelectPrayer={selectPrayer}
       />
 
       {/* Altitude adjustment info */}
