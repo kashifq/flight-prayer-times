@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme {
+  /* Primary — Warm Amber */
+  --color-primary: #92400E;
+  --color-primary-light: #FEF3C7;
+  --color-primary-hover: #78350F;
+  --color-on-primary: #ffffff;
+
+  /* Accent — Bright Gold */
+  --color-accent: #D97706;
+  --color-accent-light: #FDE68A;
+
+  /* Surface / Background — Warm Cream */
+  --color-surface: #ffffff;
+  --color-surface-variant: #F5F0E8;
+  --color-surface-container: #FAF6F0;
+  --color-background: #FEFBF6;
+
+  /* On-surface (text) — Warm charcoal */
+  --color-on-surface: #292524;
+  --color-on-surface-variant: #78716C;
+  --color-outline: #D6D3D1;
+  --color-outline-variant: #E7E5E4;
+
+  /* Semantic */
+  --color-error: #DC2626;
+  --color-error-light: #FEF2F2;
+
+  /* Fonts */
+  --font-body: "Inter", "Roboto", system-ui, sans-serif;
+  --font-arabic: "Cairo", "Inter", sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #FBBF24;
+    --color-primary-light: #451A03;
+    --color-primary-hover: #F59E0B;
+    --color-on-primary: #451A03;
+    --color-accent: #F59E0B;
+    --color-accent-light: #78350F;
+    --color-surface: #1C1917;
+    --color-surface-variant: #292524;
+    --color-surface-container: #231F1E;
+    --color-background: #171412;
+    --color-on-surface: #E7E5E4;
+    --color-on-surface-variant: #A8A29E;
+    --color-outline: #57534E;
+    --color-outline-variant: #44403C;
+    --color-error: #FCA5A5;
+    --color-error-light: #2D1514;
+  }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 50%, transparent); }
+  100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.25s ease-out both;
+}
