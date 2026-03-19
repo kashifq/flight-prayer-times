@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import type { CalculationResult, FlightInput, CalculationSettings } from '../../engine/types.ts'
 import { computeFlightPrayerTimes, CONVENTIONS } from '../../engine/index.ts'
+import { greatCircleDistanceRad } from '../../engine/flight-path.ts'
 import { formatTimeWithTZ } from '../../lib/format.ts'
 import { useNow } from '../../hooks/useNow.ts'
 import { useFlightPosition } from '../../hooks/useFlightPosition.ts'
@@ -32,26 +33,44 @@ export function ResultsScreen({ result: originalResult, input, settings, onBack 
     window.scrollTo({ top: 0 })
   }, [])
 
-  // When we have a position fix, recalculate prayer times from that point
+  // When we have a position fix, recalculate prayer times from that point.
+  // We estimate a new arrival time based on the remaining great circle distance
+  // at the original flight's average ground speed, so the flight duration stays realistic.
   const result = useMemo((): CalculationResult => {
     if (!fix) return originalResult
 
-    // Build an adjusted FlightInput: from fix position at fix time → arrival
+    const origDurationMs = input.arrivalUTC.getTime() - input.departureUTC.getTime()
+    if (origDurationMs <= 0) return originalResult
+
+    // Compute remaining distance fraction: fix→arrival vs departure→arrival
+    const totalDistRad = greatCircleDistanceRad(
+      input.departure.lat, input.departure.lon,
+      input.arrival.lat, input.arrival.lon,
+    )
+    const remainDistRad = greatCircleDistanceRad(
+      fix.lat, fix.lon,
+      input.arrival.lat, input.arrival.lon,
+    )
+
+    // Estimate remaining time proportional to remaining distance
+    const remainFraction = totalDistRad > 0 ? Math.min(remainDistRad / totalDistRad, 1) : 0
+    const remainMs = Math.round(origDurationMs * remainFraction)
+    const adjustedArrivalUTC = new Date(fix.at.getTime() + remainMs)
+
+    // Don't recalculate if we'd be past arrival
+    if (remainMs <= 0) return originalResult
+
     const adjustedInput: FlightInput = {
       departure: {
         ...input.departure,
         lat: fix.lat,
         lon: fix.lon,
-        // Keep original airport metadata for display
       },
       arrival: input.arrival,
       departureUTC: fix.at,
-      arrivalUTC: input.arrivalUTC,
+      arrivalUTC: adjustedArrivalUTC,
       cruiseAltitudeFt: input.cruiseAltitudeFt,
     }
-
-    // Don't recalculate if fix time is after arrival
-    if (fix.at.getTime() >= input.arrivalUTC.getTime()) return originalResult
 
     return computeFlightPrayerTimes(adjustedInput, settings)
   }, [fix, originalResult, input, settings])
