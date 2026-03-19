@@ -149,6 +149,7 @@ export function ResultsScreen({ result: originalResult, input, settings, onBack 
             override={override}
             onTapPosition={adjustMode ? (lat, lon) => { setManualPosition(lat, lon); setAdjustMode(false) } : undefined}
             terminatorUtc={now}
+            fix={fix}
           />
 
           {/* Adjust mode banner */}

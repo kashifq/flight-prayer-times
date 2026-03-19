@@ -13,6 +13,8 @@ interface Props {
   highlightPosition?: { lat: number; lon: number } | null
   terminatorUtc?: Date | null
   height?: number
+  /** When set, the route was recalculated from this fix point */
+  fix?: { lat: number; lon: number } | null
 }
 
 const COLORS = {
@@ -42,7 +44,7 @@ const TAP_THRESHOLD = 8 // pixels — movement below this counts as a tap
 
 export function FlightMap({
   flightPath, input, projected, override, onTapPosition,
-  highlightPosition, terminatorUtc, height = 200,
+  highlightPosition, terminatorUtc, height = 200, fix,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [panLon, setPanLon] = useState(0)
@@ -146,8 +148,8 @@ export function FlightMap({
       ctx.closePath(); ctx.fill(); ctx.stroke()
     }
 
-    // Route
-    const routePoints: { x: number; y: number }[] = []
+    // Route — original great circle (departure → arrival)
+    const origPoints: { x: number; y: number }[] = []
     const segments = 200
     for (let i = 0; i <= segments; i++) {
       const f = i / segments
@@ -155,32 +157,58 @@ export function FlightMap({
         input.departure.lat, input.departure.lon,
         input.arrival.lat, input.arrival.lon, f,
       )
-      routePoints.push({ x: toX(p.lon), y: toY(p.lat) })
+      origPoints.push({ x: toX(p.lon), y: toY(p.lat) })
     }
 
-    if (projected && projected.fraction > 0) {
+    if (fix) {
+      // Draw original route fully dimmed
+      ctx.strokeStyle = COLORS.routePast; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4])
+      ctx.beginPath()
+      for (let i = 0; i < origPoints.length; i++) {
+        if (i === 0) ctx.moveTo(origPoints[i].x, origPoints[i].y)
+        else ctx.lineTo(origPoints[i].x, origPoints[i].y)
+      }
+      ctx.stroke(); ctx.setLineDash([])
+
+      // Draw adjusted route (fix → arrival) bright
+      const adjPoints: { x: number; y: number }[] = []
+      for (let i = 0; i <= segments; i++) {
+        const f = i / segments
+        const p = interpolateGreatCircle(fix.lat, fix.lon, input.arrival.lat, input.arrival.lon, f)
+        adjPoints.push({ x: toX(p.lon), y: toY(p.lat) })
+      }
+      ctx.strokeStyle = COLORS.route; ctx.lineWidth = 2.5; ctx.setLineDash([])
+      ctx.beginPath()
+      for (let i = 0; i < adjPoints.length; i++) {
+        if (i === 0) ctx.moveTo(adjPoints[i].x, adjPoints[i].y)
+        else ctx.lineTo(adjPoints[i].x, adjPoints[i].y)
+      }
+      ctx.stroke()
+    } else if (projected && projected.fraction > 0) {
+      // No fix — draw original route with past/future split
       const splitIdx = Math.round(projected.fraction * segments)
       ctx.strokeStyle = COLORS.routePast; ctx.lineWidth = 2; ctx.setLineDash([])
       ctx.beginPath()
-      for (let i = 0; i <= splitIdx && i < routePoints.length; i++) {
-        if (i === 0) ctx.moveTo(routePoints[i].x, routePoints[i].y)
-        else ctx.lineTo(routePoints[i].x, routePoints[i].y)
+      for (let i = 0; i <= splitIdx && i < origPoints.length; i++) {
+        if (i === 0) ctx.moveTo(origPoints[i].x, origPoints[i].y)
+        else ctx.lineTo(origPoints[i].x, origPoints[i].y)
       }
       ctx.stroke()
 
       ctx.strokeStyle = COLORS.route; ctx.lineWidth = 2; ctx.setLineDash([6, 4])
       ctx.beginPath()
-      for (let i = splitIdx; i < routePoints.length; i++) {
-        if (i === splitIdx) ctx.moveTo(routePoints[i].x, routePoints[i].y)
-        else ctx.lineTo(routePoints[i].x, routePoints[i].y)
+      for (let i = splitIdx; i < origPoints.length; i++) {
+        if (i === splitIdx) ctx.moveTo(origPoints[i].x, origPoints[i].y)
+        else ctx.lineTo(origPoints[i].x, origPoints[i].y)
       }
       ctx.stroke(); ctx.setLineDash([])
     } else {
+      // Before departure — draw full route dashed
       ctx.strokeStyle = COLORS.route; ctx.lineWidth = 2; ctx.setLineDash([6, 4])
       ctx.beginPath()
-      for (let i = 0; i < routePoints.length; i++) {
-        if (i === 0) ctx.moveTo(routePoints[i].x, routePoints[i].y)
-        else ctx.lineTo(routePoints[i].x, routePoints[i].y)
+      for (let i = 0; i < origPoints.length; i++) {
+        if (i === 0) ctx.moveTo(origPoints[i].x, origPoints[i].y)
+        else ctx.lineTo(origPoints[i].x, origPoints[i].y)
       }
       ctx.stroke(); ctx.setLineDash([])
     }
@@ -220,7 +248,7 @@ export function FlightMap({
       ctx.fillStyle = COLORS.override; ctx.fill()
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke()
     }
-  }, [flightPath, input, projected, override, currentPos, highlightPosition, terminatorUtc, getViewport])
+  }, [flightPath, input, projected, override, currentPos, highlightPosition, terminatorUtc, getViewport, fix])
 
   useEffect(() => {
     draw()
