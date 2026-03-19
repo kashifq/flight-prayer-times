@@ -100,27 +100,27 @@ export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props)
       <AirportSearch label="Departure Airport" value={departure} onChange={setDeparture} />
       <AirportSearch label="Arrival Airport" value={arrival} onChange={setArrival} />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 items-end">
         <div>
           <label className="block text-sm font-medium text-on-surface-variant mb-1">Departure Date</label>
           <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-on-surface-variant mb-1">
-            Departure Time
-            {departure && <span className="text-xs text-on-surface-variant/60 ml-1">({departure.tz.split('/').pop()})</span>}
-          </label>
+          <label className="block text-sm font-medium text-on-surface-variant mb-1">Departure Time</label>
           <input type="time" value={depTime} onChange={(e) => setDepTime(e.target.value)} className={inputClass} />
+          {departure && (
+            <p className="text-xs text-on-surface-variant/60 mt-0.5">{departure.tz.split('/').pop()}</p>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 items-end">
         <div>
-          <label className="block text-sm font-medium text-on-surface-variant mb-1">
-            Arrival Date
-            {arrival && <span className="text-xs text-on-surface-variant/60 ml-1">({arrival.tz.split('/').pop()})</span>}
-          </label>
+          <label className="block text-sm font-medium text-on-surface-variant mb-1">Arrival Date</label>
           <input type="date" value={arrDate || estimatedArrival?.date || ''} onChange={(e) => setArrDate(e.target.value)} className={inputClass} />
+          {arrival && (
+            <p className="text-xs text-on-surface-variant/60 mt-0.5">{arrival.tz.split('/').pop()}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-on-surface-variant mb-1">Arrival Time</label>
@@ -131,7 +131,7 @@ export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props)
             className={inputClass}
           />
           {estimate && (
-            <p className="text-xs text-on-surface-variant/60 mt-1">Est. flight time: {formatEstimate(estimate)}</p>
+            <p className="text-xs text-on-surface-variant/60 mt-0.5">Est. {formatEstimate(estimate)}</p>
           )}
         </div>
       </div>
