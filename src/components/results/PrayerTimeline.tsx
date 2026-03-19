@@ -2,7 +2,24 @@ import type { PrayerResult, FlightInput, QiblaInfo, PrayerName as PrayerNameType
 import { PrayerName } from '../shared/PrayerName.tsx'
 import { formatTime, formatRelativeDirection, formatCountdown } from '../../lib/format.ts'
 import { classifyPrayers } from '../../lib/prayer-status.ts'
+import { PRAYER_ORDER } from '../../constants/prayers.ts'
 import type { TemporalStatus } from '../../lib/prayer-status.ts'
+
+/** For each prayer, compute an ordinal label if the name appears more than once */
+function getOrdinalLabels(prayers: PrayerResult[]): (string | null)[] {
+  const counts = new Map<string, number>()
+  for (const p of prayers) {
+    counts.set(p.prayer, (counts.get(p.prayer) || 0) + 1)
+  }
+  const seen = new Map<string, number>()
+  return prayers.map(p => {
+    const total = counts.get(p.prayer) || 1
+    if (total <= 1) return null
+    const n = (seen.get(p.prayer) || 0) + 1
+    seen.set(p.prayer, n)
+    return n === 1 ? '1st' : n === 2 ? '2nd' : `${n}th`
+  })
+}
 
 interface Props {
   prayers: PrayerResult[]
@@ -35,11 +52,19 @@ function cardClass(temporal: TemporalStatus, isUndetermined: boolean): string {
 
 export function PrayerTimeline({ prayers, input, qiblaMap, now, onSelectPrayer }: Props) {
   const classified = classifyPrayers(prayers, now)
+  const ordinals = getOrdinalLabels(prayers)
+
+  // Find which standard prayers are missing
+  const foundPrayers = new Set(prayers.map(p => p.prayer))
+  const missingPrayers = PRAYER_ORDER.filter(p => p !== 'sunrise' && !foundPrayers.has(p))
 
   if (prayers.length === 0) {
     return (
-      <div className="text-center text-on-surface-variant py-8 bg-surface rounded-2xl border border-outline-variant">
-        No prayer times occur during this flight.
+      <div className="bg-surface rounded-2xl border border-outline-variant p-5 space-y-2">
+        <p className="text-on-surface font-medium">No prayer transitions during this flight</p>
+        <p className="text-sm text-on-surface-variant">
+          All prayer times fall before departure or after arrival. Use your departure or arrival city times instead.
+        </p>
       </div>
     )
   }
@@ -76,6 +101,11 @@ export function PrayerTimeline({ prayers, input, qiblaMap, now, onSelectPrayer }
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <PrayerName prayer={prayer.prayer} />
+                      {ordinals[idx] && (
+                        <span className="text-[10px] font-medium text-on-surface-variant bg-surface-variant px-1.5 py-0.5 rounded">
+                          {ordinals[idx]}
+                        </span>
+                      )}
                       {temporal === 'current' && (
                         <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent-light px-1.5 py-0.5 rounded">
                           Now
@@ -124,6 +154,14 @@ export function PrayerTimeline({ prayers, input, qiblaMap, now, onSelectPrayer }
           )
         })}
       </div>
+
+      {/* Missing prayers note */}
+      {missingPrayers.length > 0 && (
+        <div className="mt-3 text-xs text-on-surface-variant bg-surface-variant rounded-lg px-3 py-2">
+          Not during flight: {missingPrayers.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}
+          — use departure or arrival city times
+        </div>
+      )}
     </div>
   )
 }

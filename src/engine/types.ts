@@ -25,10 +25,14 @@ export type PrayerStatus =
   | { kind: 'after-arrival'; utc: Date }
   | { kind: 'undetermined'; reason: string }
 
+export type EstimationMethod = 'none' | 'ground-level-fallback' | 'angle-based'
+
 export interface PrayerResult {
   prayer: PrayerName
   status: PrayerStatus
   altitudeAdjusted: boolean
+  /** If this prayer was estimated rather than detected from a threshold crossing */
+  estimated?: EstimationMethod
 }
 
 export interface FlightPoint {

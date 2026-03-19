@@ -32,6 +32,11 @@ export function asrAngle(noonAltitude: number, school: AsrSchool): number {
  * Detect ALL prayer times along the flight path by scanning for sun altitude
  * threshold crossings at each minute. Returns all prayers found, potentially
  * multiple of the same type for very long flights.
+ *
+ * High-latitude fallback cascade:
+ * 1. Try altitude-adjusted threshold crossing
+ * 2. If Fajr/Isha missing, try ground-level (drops ~3.3° dip)
+ * 3. If still missing, use angle-based estimation from nearest Maghrib/Sunrise
  */
 export function detectFlightPrayerTimes(
   flightPath: FlightPoint[],
@@ -42,12 +47,107 @@ export function detectFlightPrayerTimes(
   const results: PrayerResult[] = []
 
   // Find all crossings for each prayer type
-  results.push(...findAllFajr(flightPath, convention, useAltitude))
-  results.push(...findAllSunrise(flightPath, useAltitude))
-  results.push(...findAllDhuhr(flightPath))
-  results.push(...findAllAsr(flightPath, settings.asrSchool))
-  results.push(...findAllMaghrib(flightPath, convention, useAltitude))
-  results.push(...findAllIsha(flightPath, convention, useAltitude))
+  const fajrs = findAllFajr(flightPath, convention, useAltitude)
+  const sunrises = findAllSunrise(flightPath, useAltitude)
+  const dhuhrs = findAllDhuhr(flightPath)
+  const asrs = findAllAsr(flightPath, settings.asrSchool)
+  const maghribs = findAllMaghrib(flightPath, convention, useAltitude)
+  const ishas = findAllIsha(flightPath, convention, useAltitude)
+
+  results.push(...fajrs, ...sunrises, ...dhuhrs, ...asrs, ...maghribs, ...ishas)
+
+  // High-latitude fallback for Fajr and Isha when altitude-adjusted
+  if (useAltitude) {
+    // Fallback 1: try ground-level if altitude-adjusted found no Fajr/Isha
+    // but did find Maghrib/Sunrise (i.e., we have a night period)
+    if (fajrs.length === 0 && sunrises.length > 0) {
+      const groundFajrs = findAllFajr(flightPath, convention, false)
+      for (const f of groundFajrs) {
+        f.estimated = 'ground-level-fallback'
+        f.altitudeAdjusted = false
+      }
+      results.push(...groundFajrs)
+    }
+    if (ishas.length === 0 && maghribs.length > 0) {
+      const groundIshas = findAllIsha(flightPath, convention, false)
+      for (const f of groundIshas) {
+        f.estimated = 'ground-level-fallback'
+        f.altitudeAdjusted = false
+      }
+      results.push(...groundIshas)
+    }
+  }
+
+  // Fallback 2: angle-based estimation
+  // If Fajr is still missing but we have a sunrise, estimate it
+  const allFajrs = results.filter(r => r.prayer === 'fajr')
+  const allIshas = results.filter(r => r.prayer === 'isha')
+  const allMaghribs = results.filter(r => r.prayer === 'maghrib')
+  const allSunrises = results.filter(r => r.prayer === 'sunrise')
+
+  if (allFajrs.length === 0 && allSunrises.length > 0) {
+    // For each sunrise, try to find a preceding maghrib to define the night
+    for (const sunrise of allSunrises) {
+      if (sunrise.status.kind !== 'during-flight') continue
+      const sunriseMs = sunrise.status.utc.getTime()
+
+      // Find the nearest preceding maghrib
+      const precedingMaghrib = [...allMaghribs]
+        .filter(m => m.status.kind === 'during-flight' && m.status.utc.getTime() < sunriseMs)
+        .sort((a, b) => {
+          const ta = a.status.kind === 'during-flight' ? a.status.utc.getTime() : 0
+          const tb = b.status.kind === 'during-flight' ? b.status.utc.getTime() : 0
+          return tb - ta
+        })[0]
+
+      if (precedingMaghrib && precedingMaghrib.status.kind === 'during-flight') {
+        const nightMs = sunriseMs - precedingMaghrib.status.utc.getTime()
+        const fajrOffsetMs = (convention.fajrAngle / 60) * nightMs
+        const fajrMs = sunriseMs - fajrOffsetMs
+        const fajrMinute = Math.round((fajrMs - flightPath[0].utc.getTime()) / 60000)
+        if (fajrMinute >= 0 && fajrMinute < flightPath.length) {
+          results.push({
+            prayer: 'fajr',
+            status: pointToStatus(flightPath[fajrMinute]),
+            altitudeAdjusted: false,
+            estimated: 'angle-based',
+          })
+        }
+      }
+    }
+  }
+
+  if (allIshas.length === 0 && allMaghribs.length > 0 && convention.ishaAngle != null) {
+    // For each maghrib, try to find a following sunrise to define the night
+    for (const maghrib of allMaghribs) {
+      if (maghrib.status.kind !== 'during-flight') continue
+      const maghribMs = maghrib.status.utc.getTime()
+
+      // Find the nearest following sunrise
+      const followingSunrise = [...allSunrises]
+        .filter(s => s.status.kind === 'during-flight' && s.status.utc.getTime() > maghribMs)
+        .sort((a, b) => {
+          const ta = a.status.kind === 'during-flight' ? a.status.utc.getTime() : 0
+          const tb = b.status.kind === 'during-flight' ? b.status.utc.getTime() : 0
+          return ta - tb
+        })[0]
+
+      if (followingSunrise && followingSunrise.status.kind === 'during-flight') {
+        const nightMs = followingSunrise.status.utc.getTime() - maghribMs
+        const ishaOffsetMs = (convention.ishaAngle / 60) * nightMs
+        const ishaMs = maghribMs + ishaOffsetMs
+        const ishaMinute = Math.round((ishaMs - flightPath[0].utc.getTime()) / 60000)
+        if (ishaMinute >= 0 && ishaMinute < flightPath.length) {
+          results.push({
+            prayer: 'isha',
+            status: pointToStatus(flightPath[ishaMinute]),
+            altitudeAdjusted: false,
+            estimated: 'angle-based',
+          })
+        }
+      }
+    }
+  }
 
   // Sort by UTC time
   results.sort((a, b) => {
