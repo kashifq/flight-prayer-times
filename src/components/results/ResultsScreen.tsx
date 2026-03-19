@@ -86,6 +86,8 @@ export function ResultsScreen({ result: originalResult, input, settings, onBack 
   const duringCount = result.prayers.filter(p => p.status.kind === 'during-flight').length
   const currentPos = override ?? (projected ? { lat: projected.lat, lon: projected.lon } : null)
 
+  const flightStarted = now.getTime() >= input.departureUTC.getTime()
+
   const classified = useMemo(() => classifyPrayers(result.prayers, now), [result.prayers, now])
 
   // Show detail card for selected prayer
@@ -181,19 +183,21 @@ export function ResultsScreen({ result: originalResult, input, settings, onBack 
 
           <div className="flex items-center justify-between mt-2 px-1">
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={requestGPS}
-                disabled={gpsLoading}
-                className="text-xs font-medium text-primary flex items-center gap-1 hover:text-primary-hover transition-colors disabled:opacity-50"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-                </svg>
-                {gpsLoading ? 'Locating...' : fix?.source === 'gps' ? 'Update GPS' : 'Use GPS'}
-              </button>
-              {!adjustMode && (
+              {flightStarted && (
+                <button
+                  type="button"
+                  onClick={requestGPS}
+                  disabled={gpsLoading}
+                  className="text-xs font-medium text-primary flex items-center gap-1 hover:text-primary-hover transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+                  </svg>
+                  {gpsLoading ? 'Locating...' : fix?.source === 'gps' ? 'Update GPS' : 'Use GPS'}
+                </button>
+              )}
+              {flightStarted && !adjustMode && (
                 <button
                   type="button"
                   onClick={() => setAdjustMode(true)}
