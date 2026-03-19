@@ -54,7 +54,7 @@ export function PrayerDetailCard({ prayer, temporal, msUntil, input, qibla, flig
                   {formatTime(prayer.status.utc, input.departure.tz)}
                 </div>
                 <div className="text-xs text-on-surface-variant">
-                  {input.departure.tz.split('/').pop()?.replace(/_/g, ' ')}
+                  {input.departure.tz.split('/').pop()?.replace(/_/g, ' ')} time
                 </div>
               </div>
             </div>
@@ -87,11 +87,11 @@ export function PrayerDetailCard({ prayer, temporal, msUntil, input, qibla, flig
           <h3 className="text-xs font-semibold text-accent uppercase tracking-wider mb-3">Times</h3>
           <div className="grid grid-cols-2 gap-3">
             <DetailRow
-              label={input.departure.tz.split('/').pop()?.replace(/_/g, ' ') ?? 'Departure'}
+              label={`${input.departure.city} time`}
               value={formatTime(prayer.status.utc, input.departure.tz)}
             />
             <DetailRow
-              label={input.arrival.tz.split('/').pop()?.replace(/_/g, ' ') ?? 'Arrival'}
+              label={`${input.arrival.city} time`}
               value={formatTime(prayer.status.utc, input.arrival.tz)}
             />
           </div>
