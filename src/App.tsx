@@ -4,6 +4,7 @@ import { computeFlightPrayerTimes } from './engine/index.ts'
 import { useSettings } from './hooks/useSettings.ts'
 import { FlightForm } from './components/input/FlightForm.tsx'
 import { InstallHint } from './components/shared/InstallHint.tsx'
+import { UpdatePrompt } from './components/shared/UpdatePrompt.tsx'
 import { SettingsSheet } from './components/settings/SettingsSheet.tsx'
 import { ResultsScreen } from './components/results/ResultsScreen.tsx'
 
@@ -57,6 +58,7 @@ function App() {
         )}
       </main>
 
+      <UpdatePrompt />
       <SettingsSheet
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
