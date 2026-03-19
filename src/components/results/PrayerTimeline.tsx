@@ -83,7 +83,7 @@ export function PrayerTimeline({ prayers, input, qiblaMap, now, onSelectPrayer }
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      {isDuringFlight && (
+                      {prayer.status.kind === 'during-flight' && (
                         <span className={`text-sm font-semibold tabular-nums ${temporal === 'past' ? 'text-on-surface-variant' : 'text-primary'}`}>
                           {formatTime(prayer.status.utc, input.departure.tz)}
                         </span>
@@ -115,7 +115,7 @@ export function PrayerTimeline({ prayers, input, qiblaMap, now, onSelectPrayer }
                     </div>
                   )}
 
-                  {isUndetermined && (
+                  {prayer.status.kind === 'undetermined' && (
                     <p className="text-xs text-error mt-2">{prayer.status.reason}</p>
                   )}
                 </div>

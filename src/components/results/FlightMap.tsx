@@ -405,8 +405,8 @@ export function FlightMap({
 // --- Day/night terminator ---
 function drawTerminator(
   ctx: CanvasRenderingContext2D,
-  W: number, H: number,
-  minLon: number, maxLon: number, maxLat: number,
+  W: number, _H: number,
+  minLon: number, maxLon: number, _maxLat: number,
   toX: (lon: number) => number, toY: (lat: number) => number,
   utc: Date,
 ) {
