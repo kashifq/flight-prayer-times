@@ -100,10 +100,8 @@ export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props)
       <div className="space-y-2">
         <label className="block text-sm font-medium text-on-surface-variant">Departure</label>
         <AirportSearch value={departure} onChange={setDeparture} />
-        <div className="grid grid-cols-2 gap-2">
-          <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={inputClass} />
-          <input type="time" value={depTime} onChange={(e) => setDepTime(e.target.value)} className={inputClass} />
-        </div>
+        <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={inputClass} />
+        <input type="time" value={depTime} onChange={(e) => setDepTime(e.target.value)} className={inputClass} />
         {departure && (
           <p className="text-xs text-on-surface-variant/60">{departure.tz.split('/').pop()}</p>
         )}
@@ -112,15 +110,13 @@ export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props)
       <div className="space-y-2">
         <label className="block text-sm font-medium text-on-surface-variant">Arrival</label>
         <AirportSearch value={arrival} onChange={setArrival} />
-        <div className="grid grid-cols-2 gap-2">
-          <input type="date" value={arrDate || estimatedArrival?.date || ''} onChange={(e) => setArrDate(e.target.value)} className={inputClass} />
-          <input
-            type="time"
-            value={arrTime || estimatedArrival?.time || ''}
-            onChange={(e) => setArrTime(e.target.value)}
-            className={inputClass}
-          />
-        </div>
+        <input type="date" value={arrDate || estimatedArrival?.date || ''} onChange={(e) => setArrDate(e.target.value)} className={inputClass} />
+        <input
+          type="time"
+          value={arrTime || estimatedArrival?.time || ''}
+          onChange={(e) => setArrTime(e.target.value)}
+          className={inputClass}
+        />
         {arrival && (
           <p className="text-xs text-on-surface-variant/60">{arrival.tz.split('/').pop()}</p>
         )}
