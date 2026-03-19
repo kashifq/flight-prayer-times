@@ -3,6 +3,7 @@ import type { FlightInput, CalculationResult } from './engine/types.ts'
 import { computeFlightPrayerTimes } from './engine/index.ts'
 import { useSettings } from './hooks/useSettings.ts'
 import { FlightForm } from './components/input/FlightForm.tsx'
+import { InstallHint } from './components/shared/InstallHint.tsx'
 import { SettingsSheet } from './components/settings/SettingsSheet.tsx'
 import { ResultsScreen } from './components/results/ResultsScreen.tsx'
 
@@ -37,11 +38,14 @@ function App() {
         {result && input ? (
           <ResultsScreen result={result} input={input} settings={settings} onBack={handleBack} />
         ) : (
-          <FlightForm
-            onCalculate={handleCalculate}
-            onOpenSettings={() => setSettingsOpen(true)}
-            initialInput={input}
-          />
+          <>
+            <FlightForm
+              onCalculate={handleCalculate}
+              onOpenSettings={() => setSettingsOpen(true)}
+              initialInput={input}
+            />
+            <InstallHint />
+          </>
         )}
       </main>
 
