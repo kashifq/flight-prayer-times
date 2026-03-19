@@ -3,7 +3,7 @@ import type { Airport } from '../../engine/types.ts'
 import { useAirportSearch } from '../../hooks/useAirportSearch.ts'
 
 interface Props {
-  label: string
+  label?: string
   value: Airport | null
   onChange: (airport: Airport) => void
 }
@@ -34,7 +34,7 @@ export function AirportSearch({ label, value, onChange }: Props) {
 
   return (
     <div ref={wrapperRef} className="relative">
-      <label className="block text-sm font-medium text-on-surface-variant mb-1">{label}</label>
+      {label && <label className="block text-sm font-medium text-on-surface-variant mb-1">{label}</label>}
       <input
         type="text"
         value={open ? query : displayValue}
