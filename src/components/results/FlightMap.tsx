@@ -161,8 +161,8 @@ export function FlightMap({
     }
 
     if (fix) {
-      // Draw original route fully dimmed
-      ctx.strokeStyle = COLORS.routePast; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4])
+      // Draw original route very faded
+      ctx.strokeStyle = 'rgba(251,191,36,0.15)'; ctx.lineWidth = 1; ctx.setLineDash([3, 5])
       ctx.beginPath()
       for (let i = 0; i < origPoints.length; i++) {
         if (i === 0) ctx.moveTo(origPoints[i].x, origPoints[i].y)
@@ -170,20 +170,27 @@ export function FlightMap({
       }
       ctx.stroke(); ctx.setLineDash([])
 
-      // Draw adjusted route (fix → arrival) bright
+      // Draw adjusted route (fix → arrival) bright and bold
       const adjPoints: { x: number; y: number }[] = []
       for (let i = 0; i <= segments; i++) {
         const f = i / segments
         const p = interpolateGreatCircle(fix.lat, fix.lon, input.arrival.lat, input.arrival.lon, f)
         adjPoints.push({ x: toX(p.lon), y: toY(p.lat) })
       }
-      ctx.strokeStyle = COLORS.route; ctx.lineWidth = 2.5; ctx.setLineDash([])
+      ctx.strokeStyle = COLORS.route; ctx.lineWidth = 3; ctx.setLineDash([])
       ctx.beginPath()
       for (let i = 0; i < adjPoints.length; i++) {
         if (i === 0) ctx.moveTo(adjPoints[i].x, adjPoints[i].y)
         else ctx.lineTo(adjPoints[i].x, adjPoints[i].y)
       }
       ctx.stroke()
+
+      // Draw a connecting line from fix marker to the start of the adjusted route
+      const fx = toX(fix.lon); const fy = toY(fix.lat)
+      ctx.beginPath(); ctx.arc(fx, fy, 6, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(251,191,36,0.3)'; ctx.fill()
+      ctx.beginPath(); ctx.arc(fx, fy, 3, 0, Math.PI * 2)
+      ctx.fillStyle = COLORS.route; ctx.fill()
     } else if (projected && projected.fraction > 0) {
       // No fix — draw original route with past/future split
       const splitIdx = Math.round(projected.fraction * segments)
