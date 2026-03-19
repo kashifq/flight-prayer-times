@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# Flight Prayer Times
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An offline-capable Progressive Web App that calculates Islamic prayer times during flights, accounting for the aircraft's changing position, altitude, and the shifting day/night boundary.
 
-Currently, two official plugins are available:
+**Live app: https://kashifq.github.io/flight-prayer-times/**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What it does
 
-## React Compiler
+When you're flying, prayer times change continuously as your position moves across time zones and latitudes. Ground-based prayer apps don't account for this. Flight Prayer Times computes prayer times along the great circle route between your departure and arrival airports, adjusting for:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Aircraft position** — prayer times are calculated at each point along the flight path, not at a fixed city
+- **Cruise altitude** — at 35,000 ft you can see ~3.3° further over Earth's curvature, which shifts sunrise/sunset by 10–20 minutes
+- **Qibla direction** — computed relative to the aircraft's heading so you know which way to face
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **7 calculation conventions** — MWL, ISNA, Egyptian, Umm al-Qura, Karachi, Tehran, Diyanet
+- **Hanafi and standard Asr** calculation methods
+- **4 observation methods** — altitude-adjusted, ground-level, departure city, arrival city
+- **Interactive flight map** with Natural Earth coastlines, day/night terminator, and pan/zoom
+- **GPS position fixing** — use device GPS on the ground to account for delays/taxiing, with automatic prayer time recalculation
+- **Manual position adjustment** — compare with the in-flight display and tap to set your position, triggering recalculation
+- **Time-aware journey page** — past prayers are dimmed, current prayer is highlighted, next prayer shows a countdown
+- **Prayer detail cards** — tap any prayer to see qibla direction diagram, position on the map with day/night overlay, and times in both departure and arrival timezones
+- **Fully offline** — works without internet after first load (PWA with service worker)
+- **Dark and light mode** — follows system preference
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## How to use
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. Enter departure and arrival airports
+2. Set departure date/time and arrival date/time (or let it estimate from the route)
+3. Tap **Calculate Prayer Times**
+4. The journey page shows your prayers — tap any for details
+5. Use **GPS** or **Adjust** to refine your position during the flight
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Debug mode
+
+Append `?now=2026-03-18T23:30:00Z` to the URL to freeze time at a specific moment. Useful for testing different points during a flight.
+
+## Technical details
+
+- **Framework**: React 19 + TypeScript + Tailwind CSS v4
+- **Build**: Vite with PWA plugin (workbox)
+- **Solar calculations**: NOAA Solar Position Algorithm (~1 minute accuracy)
+- **Flight path**: Spherical linear interpolation (Slerp) along the great circle with trapezoidal altitude profile
+- **Map**: Canvas-rendered equirectangular projection with Natural Earth 110m coastline data (public domain)
+- **Day/night terminator**: Analytically computed from solar declination and hour angle
+- **Airport data**: ~7,000 airports with IATA codes, coordinates, and timezones
+
+## Development
+
+```bash
+npm install
+npm run dev          # Start dev server
+npm run build        # Production build
+npm test             # Run tests (vitest)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## License
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+MIT
