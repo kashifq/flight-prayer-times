@@ -111,7 +111,7 @@ export function FlightMap({
 
     // Terminator (draw before land so land overlaps slightly)
     if (terminatorUtc) {
-      drawTerminator(ctx, W, H, minLon, maxLon, maxLat, toX, toY, terminatorUtc)
+      drawTerminator(ctx, W, H, minLon, maxLon, maxLat, toX, toY, terminatorUtc, input.cruiseAltitudeFt)
     }
 
     // Grid
@@ -439,12 +439,16 @@ export function FlightMap({
 }
 
 // --- Day/night terminator ---
+// Solves for the latitude where sun altitude = threshold for each longitude.
+// At cruise altitude, the threshold accounts for horizon dip + refraction,
+// matching the prayer engine's sunrise/sunset computation.
 function drawTerminator(
   ctx: CanvasRenderingContext2D,
   W: number, _H: number,
   minLon: number, maxLon: number, _maxLat: number,
   toX: (lon: number) => number, toY: (lat: number) => number,
   utc: Date,
+  cruiseAltFt: number = 35000,
 ) {
   const jd = julianDay(utc)
   const T = julianCentury(jd)
@@ -455,26 +459,48 @@ function drawTerminator(
   const subSolarLon = ((720 - utcMinutes - eqTime) / 4 + 540) % 360 - 180
 
   const decRad = dec * DEG
-  const tanDec = Math.tan(decRad)
 
-  // Trace the terminator: for each longitude, find the latitude where sun altitude = 0
+  // Threshold: at cruise altitude, sunrise/sunset happens when sun is further below
+  // the geometric horizon due to the observer seeing over Earth's curvature.
+  // horizon dip + atmospheric refraction (0.833°)
+  const altM = cruiseAltFt * 0.3048
+  const dipDeg = altM > 0 ? Math.acos(6371000 / (6371000 + altM)) * RAD : 0
+  const thresholdDeg = -(dipDeg + 0.833)
+  const sinThreshold = Math.sin(thresholdDeg * DEG)
+
   const step = Math.max((maxLon - minLon) / W, 0.5)
   const terminatorTop: { x: number; y: number }[] = []
   const terminatorBot: { x: number; y: number }[] = []
 
   for (let lon = minLon; lon <= maxLon; lon += step) {
     const ha = ((lon - subSolarLon + 540) % 360 - 180) * DEG
+
+    // Solve: sinThreshold = sin(lat)*sin(dec) + cos(lat)*cos(dec)*cos(ha)
+    // Rewrite as: sinThreshold = R * sin(lat + phi)
+    // where R = sqrt(sin²(dec) + cos²(dec)*cos²(ha)), phi = atan2(cos(dec)*cos(ha), sin(dec))
+    const sinDec = Math.sin(decRad)
+    const cosDec = Math.cos(decRad)
+    const cosHa = Math.cos(ha)
+    const R = Math.sqrt(sinDec * sinDec + cosDec * cosDec * cosHa * cosHa)
+    const phi = Math.atan2(cosDec * cosHa, sinDec)
+
     let termLat: number
-    if (Math.abs(tanDec) < 1e-10) {
-      termLat = Math.abs(ha * RAD) < 90 ? 90 : -90
+    const ratio = sinThreshold / R
+    if (Math.abs(ratio) > 1) {
+      // No solution at this longitude (polar day/night)
+      termLat = ratio > 0 ? 90 : -90
     } else {
-      termLat = Math.atan(-Math.cos(ha) / tanDec) * RAD
+      termLat = (Math.asin(ratio) - phi) * RAD
+      // Clamp to valid range
+      if (termLat > 90) termLat = 90
+      if (termLat < -90) termLat = -90
     }
 
     const x = toX(lon)
-    const latRad = (termLat + 1) * DEG
-    const sinAlt = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(ha)
-    const nightAbove = sinAlt < 0
+    // Determine which side is night: check a point slightly north of terminator
+    const testLatRad = (termLat + 1) * DEG
+    const sinAlt = Math.sin(testLatRad) * sinDec + Math.cos(testLatRad) * cosDec * cosHa
+    const nightAbove = sinAlt < sinThreshold
 
     if (nightAbove) {
       terminatorTop.push({ x, y: toY(90) })
