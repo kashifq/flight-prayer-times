@@ -1,7 +1,8 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import type { FlightPoint, FlightInput } from '../../engine/types.ts'
 import { interpolateGreatCircle } from '../../engine/flight-path.ts'
-import { julianDay, julianCentury, sunDeclination, equationOfTime } from '../../engine/solar.ts'
+import { sunAltitude } from '../../engine/solar.ts'
+import { horizonDipAngle } from '../../engine/flight-path.ts'
 import { COASTLINES } from '../../data/coastlines.ts'
 
 interface Props {
@@ -439,9 +440,8 @@ export function FlightMap({
 }
 
 // --- Day/night terminator ---
-// Solves for the latitude where sun altitude = threshold for each longitude.
-// At cruise altitude, the threshold accounts for horizon dip + refraction,
-// matching the prayer engine's sunrise/sunset computation.
+// Uses the same sunAltitude() function as the prayer engine with binary search,
+// guaranteeing the terminator line aligns exactly with prayer positions.
 function drawTerminator(
   ctx: CanvasRenderingContext2D,
   W: number, _H: number,
@@ -450,64 +450,74 @@ function drawTerminator(
   utc: Date,
   cruiseAltFt: number = 35000,
 ) {
-  const jd = julianDay(utc)
-  const T = julianCentury(jd)
-  const dec = sunDeclination(T)
-  const eqTime = equationOfTime(T)
-
-  const utcMinutes = utc.getUTCHours() * 60 + utc.getUTCMinutes() + utc.getUTCSeconds() / 60
-  const subSolarLon = ((720 - utcMinutes - eqTime) / 4 + 540) % 360 - 180
-
-  const decRad = dec * DEG
-
-  // Threshold: at cruise altitude, sunrise/sunset happens when sun is further below
-  // the geometric horizon due to the observer seeing over Earth's curvature.
-  // horizon dip + atmospheric refraction (0.833°)
+  // Threshold: same as prayer engine for sunrise/sunset
   const altM = cruiseAltFt * 0.3048
-  const dipDeg = altM > 0 ? Math.acos(6371000 / (6371000 + altM)) * RAD : 0
-  const thresholdDeg = -(dipDeg + 0.833)
-  const sinThreshold = Math.sin(thresholdDeg * DEG)
+  const dipDeg = horizonDipAngle(altM)
+  const threshold = -(dipDeg + 0.833) // degrees
 
-  const step = Math.max((maxLon - minLon) / W, 0.5)
+  // For each longitude column, binary search for the latitude where sunAltitude = threshold
+  const step = Math.max((maxLon - minLon) / (W / 2), 1) // ~2px per sample
   const terminatorTop: { x: number; y: number }[] = []
   const terminatorBot: { x: number; y: number }[] = []
 
   for (let lon = minLon; lon <= maxLon; lon += step) {
-    const ha = ((lon - subSolarLon + 540) % 360 - 180) * DEG
+    const altAtEquator = sunAltitude(0, lon, utc)
 
-    // Solve: sinThreshold = sin(lat)*sin(dec) + cos(lat)*cos(dec)*cos(ha)
-    // Rewrite as: sinThreshold = R * sin(lat + phi)
-    // where R = sqrt(sin²(dec) + cos²(dec)*cos²(ha)), phi = atan2(cos(dec)*cos(ha), sin(dec))
-    const sinDec = Math.sin(decRad)
-    const cosDec = Math.cos(decRad)
-    const cosHa = Math.cos(ha)
-    const R = Math.sqrt(sinDec * sinDec + cosDec * cosDec * cosHa * cosHa)
-    const phi = Math.atan2(cosDec * cosHa, sinDec)
+    // Find the zero-crossing by binary search
+    let termLat: number | null = null
 
-    let termLat: number
-    const ratio = sinThreshold / R
-    if (Math.abs(ratio) > 1) {
-      // No solution at this longitude (polar day/night)
-      termLat = ratio > 0 ? 90 : -90
-    } else {
-      termLat = (Math.asin(ratio) - phi) * RAD
-      // Clamp to valid range
-      if (termLat > 90) termLat = 90
-      if (termLat < -90) termLat = -90
+    // Search between pairs where altitude crosses the threshold
+    const samples = [
+      { lat: -85, alt: sunAltitude(-85, lon, utc) },
+      { lat: -60, alt: sunAltitude(-60, lon, utc) },
+      { lat: -30, alt: sunAltitude(-30, lon, utc) },
+      { lat: 0, alt: altAtEquator },
+      { lat: 30, alt: sunAltitude(30, lon, utc) },
+      { lat: 60, alt: sunAltitude(60, lon, utc) },
+      { lat: 85, alt: sunAltitude(85, lon, utc) },
+    ]
+
+    for (let i = 0; i < samples.length - 1; i++) {
+      const a = samples[i], b = samples[i + 1]
+      if ((a.alt - threshold) * (b.alt - threshold) <= 0) {
+        // Crossing found — binary search
+        let lo = a.lat, hi = b.lat
+        for (let iter = 0; iter < 20; iter++) {
+          const mid = (lo + hi) / 2
+          const midAlt = sunAltitude(mid, lon, utc)
+          if ((midAlt - threshold) * (a.alt - threshold) > 0) {
+            lo = mid
+          } else {
+            hi = mid
+          }
+        }
+        termLat = (lo + hi) / 2
+        break // Take the first crossing (main terminator)
+      }
     }
 
     const x = toX(lon)
-    // Determine which side is night: check a point slightly north of terminator
-    const testLatRad = (termLat + 1) * DEG
-    const sinAlt = Math.sin(testLatRad) * sinDec + Math.cos(testLatRad) * cosDec * cosHa
-    const nightAbove = sinAlt < sinThreshold
-
-    if (nightAbove) {
-      terminatorTop.push({ x, y: toY(90) })
-      terminatorBot.push({ x, y: toY(termLat) })
+    if (termLat === null) {
+      // No crossing — entire column is day or night
+      if (altAtEquator > threshold) {
+        // All day — no night overlay needed at this longitude
+        terminatorTop.push({ x, y: toY(-90) })
+        terminatorBot.push({ x, y: toY(-90) })
+      } else {
+        // All night
+        terminatorTop.push({ x, y: toY(90) })
+        terminatorBot.push({ x, y: toY(-90) })
+      }
     } else {
-      terminatorTop.push({ x, y: toY(termLat) })
-      terminatorBot.push({ x, y: toY(-90) })
+      // Determine which side is night
+      const nightAbove = sunAltitude(termLat + 2, lon, utc) < threshold
+      if (nightAbove) {
+        terminatorTop.push({ x, y: toY(90) })
+        terminatorBot.push({ x, y: toY(termLat) })
+      } else {
+        terminatorTop.push({ x, y: toY(termLat) })
+        terminatorBot.push({ x, y: toY(-90) })
+      }
     }
   }
 
