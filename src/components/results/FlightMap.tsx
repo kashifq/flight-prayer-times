@@ -29,8 +29,9 @@ const COLORS = {
   override: '#ef4444',
   highlight: '#22d3ee',
   highlightGlow: 'rgba(34,211,238,0.4)',
-  night: 'rgba(0,0,30,0.35)',
-  terminator: 'rgba(251,191,36,0.3)',
+  night: 'rgba(0,0,20,0.55)',
+  day: 'rgba(56,120,180,0.15)',
+  terminator: 'rgba(251,191,36,0.5)',
 }
 
 const DEG = Math.PI / 180
@@ -450,6 +451,7 @@ function drawTerminator(
   }
 
   if (terminatorTop.length > 0) {
+    // Night side (darker overlay)
     ctx.fillStyle = COLORS.night
     ctx.beginPath()
     ctx.moveTo(terminatorTop[0].x, terminatorTop[0].y)
@@ -458,17 +460,40 @@ function drawTerminator(
     ctx.closePath()
     ctx.fill()
 
-    // Terminator line
-    ctx.strokeStyle = COLORS.terminator
-    ctx.lineWidth = 1
-    ctx.beginPath()
+    // Day side (lighter tint to create contrast)
+    // The day region is the complement of the night region
+    const termLine: { x: number; y: number }[] = []
     for (let i = 0; i < terminatorTop.length; i++) {
-      // The terminator is at whichever edge is NOT at ±90
       const p = terminatorTop[i]
       const b = terminatorBot[i]
-      const ty = (p.y === toY(90)) ? b.y : p.y
-      if (i === 0) ctx.moveTo(p.x, ty)
-      else ctx.lineTo(p.x, ty)
+      termLine.push({ x: p.x, y: (p.y === toY(90)) ? b.y : p.y })
+    }
+    ctx.fillStyle = COLORS.day
+    ctx.beginPath()
+    // Trace the terminator line, then close via the opposite edge
+    ctx.moveTo(termLine[0].x, termLine[0].y)
+    for (const p of termLine) ctx.lineTo(p.x, p.y)
+    // Determine which edge the day side extends to
+    const nightAboveFirst = terminatorTop[0].y === toY(90)
+    if (nightAboveFirst) {
+      // Night is above → day is below
+      ctx.lineTo(termLine[termLine.length - 1].x, toY(-90))
+      ctx.lineTo(termLine[0].x, toY(-90))
+    } else {
+      // Night is below → day is above
+      ctx.lineTo(termLine[termLine.length - 1].x, toY(90))
+      ctx.lineTo(termLine[0].x, toY(90))
+    }
+    ctx.closePath()
+    ctx.fill()
+
+    // Terminator line (brighter)
+    ctx.strokeStyle = COLORS.terminator
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    for (let i = 0; i < termLine.length; i++) {
+      if (i === 0) ctx.moveTo(termLine[i].x, termLine[i].y)
+      else ctx.lineTo(termLine[i].x, termLine[i].y)
     }
     ctx.stroke()
   }
