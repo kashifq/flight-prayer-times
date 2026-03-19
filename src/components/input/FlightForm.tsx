@@ -97,26 +97,39 @@ export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-full overflow-hidden">
-      <div className="space-y-2 overflow-hidden">
+      <div className="space-y-2">
         <label className="block text-sm font-medium text-on-surface-variant">Departure</label>
         <AirportSearch value={departure} onChange={setDeparture} />
-        <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={inputClass} />
-        <input type="time" value={depTime} onChange={(e) => setDepTime(e.target.value)} className={inputClass} />
+        <div>
+          <label className="block text-xs text-on-surface-variant/60 mb-1">Date</label>
+          <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={inputClass} style={{ width: '100%' }} />
+        </div>
+        <div>
+          <label className="block text-xs text-on-surface-variant/60 mb-1">Time</label>
+          <input type="time" value={depTime} onChange={(e) => setDepTime(e.target.value)} className={inputClass} style={{ width: '100%' }} />
+        </div>
         {departure && (
           <p className="text-xs text-on-surface-variant/60">{departure.tz.split('/').pop()}</p>
         )}
       </div>
 
-      <div className="space-y-2 overflow-hidden">
+      <div className="space-y-2">
         <label className="block text-sm font-medium text-on-surface-variant">Arrival</label>
         <AirportSearch value={arrival} onChange={setArrival} />
-        <input type="date" value={arrDate || estimatedArrival?.date || ''} onChange={(e) => setArrDate(e.target.value)} className={inputClass} />
-        <input
-          type="time"
-          value={arrTime || estimatedArrival?.time || ''}
-          onChange={(e) => setArrTime(e.target.value)}
-          className={inputClass}
-        />
+        <div>
+          <label className="block text-xs text-on-surface-variant/60 mb-1">Date</label>
+          <input type="date" value={arrDate || estimatedArrival?.date || ''} onChange={(e) => setArrDate(e.target.value)} className={inputClass} style={{ width: '100%' }} />
+        </div>
+        <div>
+          <label className="block text-xs text-on-surface-variant/60 mb-1">Time</label>
+          <input
+            type="time"
+            value={arrTime || estimatedArrival?.time || ''}
+            onChange={(e) => setArrTime(e.target.value)}
+            className={inputClass}
+            style={{ width: '100%' }}
+          />
+        </div>
         {arrival && (
           <p className="text-xs text-on-surface-variant/60">{arrival.tz.split('/').pop()}</p>
         )}
