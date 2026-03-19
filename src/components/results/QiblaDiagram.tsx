@@ -40,7 +40,9 @@ export function QiblaDiagram({ qibla }: Props) {
     ctx.lineWidth = 1
     ctx.stroke()
 
-    // Cardinal tick marks
+    // Cardinal tick marks — rotated so that actual compass directions
+    // are correct relative to the aircraft (up = direction of travel)
+    const headingOffset = qibla.aircraftHeading // degrees clockwise from north
     const cardinals = [
       { angle: 0, label: 'N' },
       { angle: 90, label: 'E' },
@@ -52,7 +54,9 @@ export function QiblaDiagram({ qibla }: Props) {
     ctx.textBaseline = 'middle'
     ctx.fillStyle = 'rgba(100,116,139,0.5)'
     for (const { angle, label } of cardinals) {
-      const rad = (angle - 90) * DEG
+      // Rotate cardinal positions: subtract heading so N appears
+      // at the correct position relative to direction of travel (up)
+      const rad = (angle - headingOffset - 90) * DEG
       const tx = cx + (R + S * 0.055) * Math.cos(rad)
       const ty = cy + (R + S * 0.055) * Math.sin(rad)
       ctx.fillText(label, tx, ty)
