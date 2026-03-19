@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#92400E"/>
+      <stop offset="1" stop-color="#78350F"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Subtle inner glow -->
+  <rect x="8" y="8" width="496" height="496" rx="88" fill="none" stroke="#FBBF24" stroke-opacity="0.1" stroke-width="2"/>
+  <!-- Plane -->
+  <g transform="translate(256,210) scale(3.5)">
+    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#FBBF24"/>
+  </g>
+  <!-- Crescent moon -->
+  <g transform="translate(256,370)">
+    <path d="M0 0a42 42 0 1 1 0-52 33 33 0 1 0 0 52z" fill="#FBBF24" opacity="0.6" transform="translate(-20,26)"/>
+  </g>
+  <!-- Arc suggesting flight path -->
+  <path d="M120 320 Q 256 160 392 320" fill="none" stroke="#FBBF24" stroke-opacity="0.2" stroke-width="3" stroke-dasharray="8 6"/>
+</svg>
