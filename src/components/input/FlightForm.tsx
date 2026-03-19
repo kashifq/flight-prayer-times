@@ -40,9 +40,9 @@ function formatEstimate(minutes: number): string {
   return `~${h}h ${m}m`
 }
 
-const inputClass = `w-full min-w-0 px-3 py-2.5 rounded-lg border border-outline bg-surface text-on-surface
+const inputClass = `w-full min-w-0 max-w-full px-3 py-2.5 rounded-lg border border-outline bg-surface text-on-surface
                     focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent
-                    transition-shadow`
+                    transition-shadow box-border`
 
 export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props) {
   const depLocal = initialInput ? utcToLocal(initialInput.departureUTC, initialInput.departure.tz) : null
@@ -97,7 +97,7 @@ export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-2">
+      <div className="space-y-2 overflow-hidden">
         <label className="block text-sm font-medium text-on-surface-variant">Departure</label>
         <AirportSearch value={departure} onChange={setDeparture} />
         <input type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={inputClass} />
@@ -107,7 +107,7 @@ export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props)
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 overflow-hidden">
         <label className="block text-sm font-medium text-on-surface-variant">Arrival</label>
         <AirportSearch value={arrival} onChange={setArrival} />
         <input type="date" value={arrDate || estimatedArrival?.date || ''} onChange={(e) => setArrDate(e.target.value)} className={inputClass} />
