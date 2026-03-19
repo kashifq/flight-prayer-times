@@ -1,14 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <rect width="48" height="48" rx="10" fill="#92400E"/>
-  <rect x="1" y="1" width="46" height="46" rx="9" fill="url(#g)" stroke="none"/>
-  <!-- Plane -->
-  <path d="M34 20v-1.5l-6-3.75V10.5c0-.62-.5-1.13-1.13-1.13s-1.12.5-1.12 1.13v4.25l-6 3.75V20l6-1.88V22.5l-1.5 1.13V25l2.63-.75L29.5 25v-1.37L28 22.5v-4.38L34 20z" fill="#FBBF24"/>
-  <!-- Crescent -->
-  <path d="M18 32a7 7 0 1 1 0-8.5 5.5 5.5 0 1 0 0 8.5z" fill="#FBBF24" opacity="0.7"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#92400E"/>
-      <stop offset="1" stop-color="#78350F"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#78350F"/>
+      <stop offset="1" stop-color="#451A03"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="100" y1="80" x2="400" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDE68A"/>
+      <stop offset="1" stop-color="#D97706"/>
     </linearGradient>
   </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="200" cy="310" r="140" fill="url(#gold)" opacity="0.25"/>
+  <circle cx="250" cy="280" r="130" fill="url(#bg)"/>
+  <g transform="translate(256,230) rotate(-30) scale(7)">
+    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="url(#gold)"/>
+  </g>
+  <path d="M80 400 Q 256 120 432 280" fill="none" stroke="#FBBF24" stroke-opacity="0.35" stroke-width="5" stroke-linecap="round"/>
 </svg>
