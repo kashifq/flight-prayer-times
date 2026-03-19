@@ -96,7 +96,7 @@ export function FlightForm({ onCalculate, onOpenSettings, initialInput }: Props)
   const isValid = departure && arrival && depDate && depTime && (arrTime || estimatedArrival)
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5 max-w-full overflow-hidden">
       <div className="space-y-2 overflow-hidden">
         <label className="block text-sm font-medium text-on-surface-variant">Departure</label>
         <AirportSearch value={departure} onChange={setDeparture} />

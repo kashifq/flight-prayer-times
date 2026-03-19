@@ -43,7 +43,7 @@ function App() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6">
+      <main className="max-w-lg mx-auto px-4 py-6 overflow-hidden">
         {result && input ? (
           <ResultsScreen result={result} input={input} settings={settings} onBack={handleBack} />
         ) : (
